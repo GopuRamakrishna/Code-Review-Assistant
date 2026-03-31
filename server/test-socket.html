@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head><title>Socket.io Test</title></head>
+<body>
+  <h2>Socket.io Live Events</h2>
+  <div id="log" style="font-family:monospace;font-size:13px"></div>
+
+  <script src="http://localhost:5000/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io('http://localhost:5000');
+    const log = document.getElementById('log');
+
+    function addLine(color, text) {
+      log.innerHTML += `<p style="color:${color};margin:4px 0">${text}</p>`;
+    }
+
+    socket.on('connect', () =>
+      addLine('green', `Connected: ${socket.id}`));
+
+    socket.on('review:queued', d =>
+      addLine('purple', `QUEUED: PR #${d.prNumber} — ${d.title}`));
+
+    socket.on('review:started', d =>
+      addLine('blue', `STARTED: PR #${d.prNumber} — analysing...`));
+
+    socket.on('review:progress', d =>
+      addLine('orange', `PROGRESS: PR #${d.prNumber} — ${d.progress}% — ${d.currentFile}`));
+
+    socket.on('review:complete', d =>
+      addLine('green', `COMPLETE: PR #${d.prNumber} — ${d.findings} findings in ${d.duration}ms`));
+  </script>
+</body>
+</html>

@@ -2,14 +2,17 @@ const PullRequest=require('../models/PullRequest');
 
 const reviewQueue=require('../queues/reviewQueue');
 
+//get the emitReviewEvent helper to emit events from the worker
+const {emitReviewEvent}=require('../src/socket');
+
 async function handlePREvent(payload){
+
 
    const {number,pull_request,repository}=payload;
 
    const [owner,repo]=repository.full_name.split('/');
 
    //save PR to MongoDB with status pending
-
    await PullRequest.findOneAndUpdate(
     {repoFullName:repository.full_name,prNumber:number},
     {
@@ -26,6 +29,7 @@ async function handlePREvent(payload){
     },
     {upsert:true,new:true} //create new or update existing
    );
+
   console.log(`[Controller] PR #${number} saved → pending`);
 
   //enqueue job - woker dones all heavy lifting (fetching files, parsing diffs, running rules, posting comments, updating DB)
@@ -36,6 +40,16 @@ async function handlePREvent(payload){
     title:pull_request.title,
     author:pull_request.user.login
   });
+
+
+  //Emit PR queued -dashboard shows card immediately with "pending" status, updated to "analysing" when worker picks up the job, then "done" or "failed"
+  emitReviewEvent('review:queued',{
+    prNumber:number,
+    repo:repository.full_name,
+    title:pull_request.title,
+    author:pull_request.user.login,
+    status:'pending'
+  })
 
 console.log(`[Controller] PR #${number} queued as job ${job.id}`);
   // Webhook handler returns 200 right after this — done in <50ms
