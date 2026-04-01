@@ -1,6 +1,12 @@
 require('dotenv').config();
 const express=require('express');
 
+//import http -built in node module to create server
+const http=require('http');
+
+//import initSocket from socket.js to attach socket.io to the http server
+const {initSocket}=require('./src/socket');
+
 //importing routes 
 const webhookRouter=require('./routes/webhook');
 
@@ -17,6 +23,11 @@ require('./worker/reviewWorker');
 
 //create the express object(app)
 const app=express();
+//create the http server
+const server=http.createServer(app);
+//initialize socket.io with the http server
+const io=initSocket(server);
+
 //port number
 const PORT=process.env.PORT || 5000;
 
@@ -42,12 +53,14 @@ app.get('/',(req,res)=>{
 })
 
 
-
+//use server.listen instead  of app.listen to start the server, so that socket.io works
 //listen to the port
-app.listen(PORT,()=>{
-   console.log(`[Server] Running on port ${PORT}`);
-  console.log('[Server] Webhook receiver: ready');
-  console.log('[Server] Review worker:    ready');
+server.listen(PORT,()=>{
+    console.log(`[Server] Running on port ${PORT}`);
+    console.log('[Server] Webhook receiver: ready');
+    console.log('[Server] Review worker:    ready');
+    console.log('[Server] Socket.io:        ready');
+
 });
 
 
