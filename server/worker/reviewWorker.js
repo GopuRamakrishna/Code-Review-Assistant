@@ -12,7 +12,7 @@ const {runRules}=require('../services/ruleEngine');
 
 //process upto 2 jobs at a time
 reviewQueue.process(2,async (job)=>{
-    const {owner,repo,prNumber,title,author}=job.data;
+    const {owner,repo,prNumber,title,author,commitId}=job.data;
     const repoFullName=`${owner}/${repo}`;
 
     const startTime=Date.now();
@@ -59,7 +59,11 @@ reviewQueue.process(2,async (job)=>{
 
          const findings=runRules(parsedLines,file.filename);
 
+        // console.log('findings: using runRules',findings);
+
+
          allFindings.push(...findings);
+
 
          //emit : progress per file
          emitReviewEvent('review:progress',{
@@ -79,11 +83,12 @@ reviewQueue.process(2,async (job)=>{
     if(allFindings.length>0){
         const githubComments = allFindings.map(f => ({
                     path: f.path,
-                    position: f.position,
+                    lineNumber:f.lineNumber || null,
+                    position: f.position,  
                     body: `[${f.severity.toUpperCase()}] ${f.body}`
                     }));
         
-              await postReviewComment(owner, repo, prNumber, githubComments);
+              await postReviewComment(owner, repo, prNumber, githubComments,commitId);
     //    await postReviewComment(owner,repo,prNumber,allFindings);
        console.log(`[Worker] Job ${job.id} - Posted ${allFindings.length} review comments to PR #${prNumber}`); 
     }
@@ -103,9 +108,9 @@ reviewQueue.process(2,async (job)=>{
                     body:f.body,
                     severity:f.severity || 'warning',
                     source:'rule',
-                    confindence:null,
+                    confidence:null,
                     feedback:null
-
+       
                 }))
             }
         }

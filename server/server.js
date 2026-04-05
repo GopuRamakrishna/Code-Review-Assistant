@@ -1,6 +1,9 @@
 require('dotenv').config();
 const express=require('express');
 
+//import cors to handle cross-origin requests
+const cors=require('cors');
+
 //import http -built in node module to create server
 const http=require('http');
 
@@ -9,6 +12,7 @@ const {initSocket}=require('./src/socket');
 
 //importing routes 
 const webhookRouter=require('./routes/webhook');
+const prRouter=require('./routes/pr');
 
 //import the connectDB function to connect to the dataabase
 const connectDB=require('./config/db')
@@ -23,6 +27,12 @@ require('./worker/reviewWorker');
 
 //create the express object(app)
 const app=express();
+
+app.use(cors({
+    origin:process.env.CLIENT_URL || 'http://localhost:3000',
+    credentials:true
+}))
+
 //create the http server
 const server=http.createServer(app);
 //initialize socket.io with the http server
@@ -41,6 +51,9 @@ app.use(express.json());
 
 //use the webhook router 
 app.use('/api/webhooks',webhookRouter);
+
+//use the PR router
+app.use('/api/prs',prRouter);
 
 
 

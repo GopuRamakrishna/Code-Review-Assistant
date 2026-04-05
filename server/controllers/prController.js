@@ -38,7 +38,8 @@ async function handlePREvent(payload){
     repo,
     prNumber:number,
     title:pull_request.title,
-    author:pull_request.user.login
+    author:pull_request.user.login,
+    commitId:pull_request.head.sha
   });
 
 

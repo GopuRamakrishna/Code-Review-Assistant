@@ -27,12 +27,44 @@ async function getPRFiles(owner,repo,pullNumber){
 }
 
 //post inline review comment on a specific diff line
-async function postReviewComment(owner,repo,pullNumber,comments){
-    await octokit.pulls.createReview({
-        owner,repo,pull_number:pullNumber,
-        event:'COMMENT',
-        comments //array of {path,position,body}
-    });
+async function postReviewComment(owner,repo,pullNumber,comments,commitId){
+    // await octokit.pulls.createReview({
+    //     owner,repo,pull_number:pullNumber,
+    //     event:'COMMENT',
+    //     comments //array of {path,position,body}
+    // });
+
+    for (const comment of comments) {
+    try {
+      await octokit.pulls.createReviewComment({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        path: comment.path,
+        line: comment.lineNumber,   // ✅ use line
+        side: "RIGHT",              // ✅ valid here
+        body: comment.body,
+        commit_id: commitId         // ✅ specify the commit ID
+      });
+
+    } catch (err) {
+      console.log("Skipping invalid comment:", err.message);
+    }
+  }
+
+// try {
+//       await octokit.pulls.createReviewComment({
+//         owner,
+//         repo,
+//         pull_number: pullNumber,
+//         event:'COMMENT',             
+//         comments
+//     });
+
+//     } catch (err) {
+//       console.log("Skipping invalid comment and the error is:: ", err.message);
+//     }
+
 }
 
 
