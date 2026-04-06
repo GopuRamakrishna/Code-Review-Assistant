@@ -5,6 +5,8 @@ import PRCard from '../components/PRCard'
 import toast from 'react-hot-toast'
 import { use } from 'react'
 import { fetchPRs } from '../services/api'
+import {Link} from 'react-router-dom'
+
 
 function PRList() {
 
@@ -86,7 +88,13 @@ function PRList() {
         </div>
       ) : (
         <div className="pr-grid">
-          {prs.map(pr => <PRCard key={pr._id} pr={pr} />)}
+          {
+          prs.map(pr => (
+            <Link key={pr._id} to={`/prs/${pr._id}`} className="pr-card-link">
+                <PRCard pr={pr} />
+            </Link>
+          ))
+          }
         </div>
       )}
     </div>
