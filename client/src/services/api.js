@@ -39,4 +39,12 @@ export const submitFeedback=async(prId,findingId,feedback)=>{
 }
 
 
+export const fetchTrend       = async () => (await api.get('/prs/stats/trend')).data.data;
+
+export const fetchLeaderboard  = async () => (await api.get('/prs/stats/leaderboard')).data.data;
+
+export const fetchSeverity     = async () => (await api.get('/prs/stats/severity')).data.data;
+
+export const fetchFiles        = async () => (await api.get('/prs/stats/files')).data.data;
+
 export default api;
