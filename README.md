@@ -100,7 +100,7 @@ React Dashboard (Socket.io)
 
 ```bash
 # Clone the repository
-git clone <repo-url>
+git clone https://github.com/GopuRamakrishna/Code-Review-Assistant.git
 
 # Backend setup
 cd server
