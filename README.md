@@ -84,8 +84,8 @@ React Dashboard (Socket.io)
 
 ## 🔮 Future Work
 
-* Integrate **CodeBERT** for ML-based code analysis(is in progress)
-* Fine-tune models using collected user feedback
+* Integrate **CodeBERT** for ML-based code analysis.
+* Fine-tune models using collected user feedback(is in progress)
 * Improve classification of issues (bug, smell, optimization)
 
 ---
