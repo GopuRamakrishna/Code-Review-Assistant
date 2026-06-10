@@ -68,4 +68,10 @@ async function postReviewComment(owner,repo,pullNumber,comments,commitId){
 }
 
 
-module.exports={getPRDiff,getPRFiles,postReviewComment}
+
+async function postPRComment(owner, repo, pullNumber, body) {
+  await octokit.issues.createComment({ owner, repo, issue_number: pullNumber, body });
+}
+
+
+module.exports={getPRDiff,getPRFiles,postReviewComment,postPRComment}
