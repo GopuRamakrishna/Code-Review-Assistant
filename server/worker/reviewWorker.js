@@ -1,11 +1,14 @@
 //import the emitReviewEvent helper to emit events to clients from this worker
 const {emitReviewEvent}=require('../src/socket');
 
+//import the analyzeCode function to run ML analysis on code
+const { analyzeCode, isMLServiceUp } = require('../services/mlService');
+
 const reviewQueue=require('../queues/reviewQueue');
 
 const PullRequest=require('../models/PullRequest');
 
-const {getPRFiles,postReviewComment}=require('../services/githubService');
+const {getPRFiles,postReviewComment,postPRComment}=require('../services/githubService');
 const {parseDiff}=require('../services/diffParser');
 const {runRules}=require('../services/ruleEngine');
 
@@ -44,6 +47,12 @@ reviewQueue.process(2,async (job)=>{
 
     const allFindings=[];
 
+
+    // ML code analysis - check if ML service is up before running analysis, if not we skip it and just run the rule engine
+    const mlAvailable = await isMLServiceUp();
+    const allMLFindings = [];
+    console.log(`[Worker] ML: ${mlAvailable ? 'online' : 'offline'}`);
+
     //run the parse diff + rulengine on each file
     for(let i=0;i<jsFiles.length;i++){
 
@@ -58,6 +67,13 @@ reviewQueue.process(2,async (job)=>{
 
 
          const findings=runRules(parsedLines,file.filename);
+
+            //if ML is available, run the analysis and combine the findings
+        if (mlAvailable) {
+            const addedCode = parsedLines.map(l => l.content).join('\n');
+            const mlFindings = await analyzeCode(addedCode, file.filename);
+            allMLFindings.push(...mlFindings);
+        }
 
         // console.log('findings: using runRules',findings);
 
@@ -92,8 +108,18 @@ reviewQueue.process(2,async (job)=>{
     //    await postReviewComment(owner,repo,prNumber,allFindings);
        console.log(`[Worker] Job ${job.id} - Posted ${allFindings.length} review comments to PR #${prNumber}`); 
     }
+   
+    // Post general comments for ML findings if any
+    for (const f of allMLFindings) {
+       await postPRComment(owner, repo, prNumber, f.body);
+    }
+    console.log(`[Worker] Job ${job.id} - Posted ${allMLFindings.length} ML comments to PR #${prNumber}`);  
+
+
 
     await job.progress(90) //90% done, waiting for github API
+
+    //In the allFindings array before MongoDB save,, we can add additional fields like severity (error/warning), confidence score from ML, or even a source field to indicate if the finding came from a specific rule or from ML analysis. This can help in the future if we want to filter or sort findings based on severity or source when displaying them in the frontend.
 
     // - Save findings +marks done in DB
     await PullRequest.findOneAndUpdate(
@@ -101,17 +127,41 @@ reviewQueue.process(2,async (job)=>{
         {
             $set:{
                 status:'done',
-                findings:allFindings.map(f=>({
-                    path: f.path,
-                    lineNumber: f.lineNumber || null,
-                    position:f.position,
-                    body:f.body,
-                    severity:f.severity || 'warning',
-                    source:'rule',
-                    confidence:null,
-                    feedback:null
+                // findings:allFindings.map(f=>({
+                //     path: f.path,
+                //     lineNumber: f.lineNumber || null,
+                //     position:f.position,
+                //     body:f.body,
+                //     severity:f.severity || 'warning',
+                //     source:'rule',
+                //     confidence:null,
+                //     feedback:null
        
+                // }))
+                findings:[
+                    //  Rule engine findings 
+                ...allFindings.map(f => ({
+                    path:       f.path,
+                    lineNumber: f.lineNumber || null,
+                    position:   f.position,
+                    body:       f.body,
+                    severity:   f.severity || 'warning',
+                    source:     'rule',
+                    confidence: null,
+                    feedback:   null
+                })),
+                // ML findings 
+                ...allMLFindings.map(f => ({
+                    path:       f.path,
+                    lineNumber: null,
+                    position:   null,
+                    body:       f.body,
+                    severity:   f.severity,
+                    source:     'ml',
+                    confidence: f.confidence,
+                    feedback:   null
                 }))
+                ]
             }
         }
     );
