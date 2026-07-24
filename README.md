@@ -127,18 +127,7 @@ Training only on organically flagged-and-reviewed comments risks **feedback bias
 - Active learning: prioritize labeling low-confidence predictions rather than relying solely on organic feedback.
 - **Shadow deployment:** the fine-tuned model runs in parallel with the static rules, logging disagreements, before it's allowed to gate which comments are actually posted.
 
-### Status
 
-| Component | Status |
-|---|---|
-| Feedback collection (MongoDB) | ✅ Live |
-| Dataset construction (repo-grouped splits) | 🔄 In progress |
-| Domain-adaptive pretraining / synthetic augmentation | 🔜 Planned |
-| CodeBERT fine-tuning + evaluation | 🔜 Planned |
-| Shadow deployment against static rules | 🔜 Planned |
-| Issue-type classification (bug/smell/optimization) | 🔜 Planned |
-
----
 
 ## 🚀 Getting Started
 
